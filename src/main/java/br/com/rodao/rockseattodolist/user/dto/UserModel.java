@@ -1,4 +1,4 @@
-package br.com.rodao.rockseattodolist.user;
+package br.com.rodao.rockseattodolist.user.dto;
 
 
 public class UserModel {
