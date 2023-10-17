@@ -23,7 +23,24 @@ public class FilterTaskAuth extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // Pegar a autenticação (usuario e senha)
+        var servletPath = request.getServletPath();
+        if (servletPath.startsWith("/tasks/")) {
+            // Pegar a autenticação (usuario e senha)
+            String[] credentials = getCredentialsFromHeader(request);
+
+            String user = credentials[0];
+            String password = credentials[1];
+
+            // validar usuario e senha
+            validateUserAndPassword(user, password, request, response);
+
+        }
+
+        // Sucesso -> avança!
+        doFilter(request, response, filterChain);
+    }
+
+    private String[] getCredentialsFromHeader(HttpServletRequest request) {
         String authBase64 = request.getHeader("Authorization");
         String authEncoded = authBase64.substring("Basic".length()).trim();
 
@@ -31,20 +48,12 @@ public class FilterTaskAuth extends OncePerRequestFilter {
 
         String authString = new String(authDecoded);
 
-        String[] credentials = authString.split(":");
+        return authString.split(":");
 
-        String user = credentials[0];
-        String password = credentials[1];
-
-        // validar usuario
-        // validar senha
-        validateUserAndPassword(user, password, response);
-
-        // Sucesso -> avança!
-        doFilter(request, response, filterChain);
     }
 
-    private void validateUserAndPassword(String username, String password, HttpServletResponse response) throws IOException {
+    private void validateUserAndPassword(String username, String password, HttpServletRequest request,
+                                         HttpServletResponse response) throws IOException {
         UserLombokModel userOnData = userRepository.findByUsername(username);
         if (userOnData == null) {
             response.sendError(HttpStatus.UNAUTHORIZED.value());
@@ -52,6 +61,10 @@ public class FilterTaskAuth extends OncePerRequestFilter {
             BCrypt.Result passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), userOnData.getPassword());
             if (!passwordVerify.verified) {
                 response.sendError(HttpStatus.UNAUTHORIZED.value());
+            } else {
+                //envia o usuário para frente
+                request.setAttribute("idUser", userOnData.getId());
+
             }
 
         }
