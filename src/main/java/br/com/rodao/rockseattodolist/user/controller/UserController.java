@@ -29,6 +29,6 @@ public class UserController {
 
         user.setPassword(passwordCrypt);
         UserLombokModel userCriado = userRepository.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userCriado);
+        return ResponseEntity.status(HttpStatus.OK).body(userCriado);
     }
 }
